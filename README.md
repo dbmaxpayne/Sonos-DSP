@@ -47,7 +47,7 @@ This repo is the result of my work and I hope it helps anyone with old Play:5 or
 | 11              | GND      | +3.3V                     | 12              |
 | 13              | GND      | +11.1V                    | 14              |
 | 15              | GND      | +12V                      | 16              |
-| 17              | GND      |                           | 18              |
+| 17              | GND      | Amplifier Power Enable    | 18              |
 | 19              | GND      |                           | 20              |
 | 21              | GND      |                           | 22              |
 | 23              | GND      |                           | 24              |
@@ -100,16 +100,17 @@ This repo is the result of my work and I hope it helps anyone with old Play:5 or
 > Make sure to only connect one side of this to GND to avoid ground loops.
 
 ## Main Wiring
-| Sonos Mainboard Pin #          | DSP Pin          | Raspberry Pi GPIO #   |
-| :---                           |:---              |:---                   |
-| 28 - DAI_SCLK / DAI_MCLK (I2S) | MP11 - Out_BCLK  | GPIO 18 - I2S CLK In  |
-| 32 - DAI_LRCK (I2S)            | MP10 - Out_LRCLK | GPIO 19 - I2S LRCLK   |
-| 34 - DAI_LRCK (I2S)            | MP10 - Out_LRCLK | GPIO 20 - I2S Data In |
-| 36 - SCL (I2C)                 | (SCL)            | GPIO  3 - I2C SCL     |
-| 38 - SDA (I2C)                 | (SDA)            | GPIO  2 - I2C SCL     |
-| 42 - RST#                      |                  | GPIO 17               |
-| 44 - MUTE#                     |                  | GPIO 5                |
-| GND (only one per board!)      | GND              | GND                   |
+| Sonos Mainboard Pin #          | DSP Pin          | Raspberry Pi GPIO #        |
+| :---                           |:---              |:---                        |
+| 28 - DAI_SCLK / DAI_MCLK (I2S) | MP11 - Out_BCLK  | GPIO 18 - I2S CLK In       |
+| 32 - DAI_LRCK (I2S)            | MP10 - Out_LRCLK | GPIO 19 - I2S LRCLK        |
+| 34 - DAI_LRCK (I2S)            | MP10 - Out_LRCLK | GPIO 20 - I2S Data In      |
+| 36 - SCL (I2C)                 | (SCL)            | GPIO  3 - I2C SCL          |
+| 38 - SDA (I2C)                 | (SDA)            | GPIO  2 - I2C SCL          |
+| 42 - RST#                      |                  | GPIO 17                    |
+| 44 - MUTE#                     |                  | GPIO 5                     |
+| 28 - Amplifier Power Enable    |                  | GPIO 5 (Yes, connect both) |
+| GND (only one per board!)      | GND              | GND                        |
 
 ## Button Wiring
 | Pin           | DSP Pin | Raspberry Pi GPIO # |
@@ -118,3 +119,39 @@ This repo is the result of my work and I hope it helps anyone with old Play:5 or
 | 5 OR 7 - GND  | GND     |                     |
 | 9 - Volume +  | MP1     |                     |
 | 10 - Volume - | MP7     |                     |
+
+# Software / RPi Configuration
+## Sonos-Control.sh
+```
+Sonos-Control.sh must be called to set the CS44600's registers to allow audio to pass through the signal path and to do various other things.
+Check the file as it contains comments.
+
+initialize:
+As the name suggests, this argument initializes the CS44600 after a reboot.
+A series of register writes ensures proper operation of the chip.
+Consult the datasheet for detailed explanation or custom settings.
+
+switchMute:
+Switches the mute state of the hardware and sends a signal to a possible squeezelite server to pause/resume playback.
+As pin 44 and 28 of the Sonos mainboard are to be connected, it also switches on the power output stage of the board.
+If pin 28 is not set to high, the volume will be very low and the speakers are basically driven from a 5V instead of a 24V source. 
+```
+
+## /boot/config.txt
+```
+# Enable the I2C bus on GPIO 2/3
+dtparam=i2c_arm=on
+
+# GPIO defaults and triggers for Sonos
+gpio=17=op,dl,pu
+gpio=5=op,dl,pu
+
+# ADAU 1701 RESET Pin
+gpio=27=op,dl,pu
+
+# Automated Keystrokes for Triggerhappy
+dtoverlay=gpio-key,gpio=24,keycode=164,label="KEY_PLAYPAUSE",gpio_pull=up
+
+# Load ADAU1701 I2S driver
+dtoverlay=sonos-adau1701_i2s
+```
