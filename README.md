@@ -100,17 +100,18 @@ This repo is the result of my work and I hope it helps anyone with old Play:5 or
 > Make sure to only connect one side of this to GND to avoid ground loops.
 
 ## Main Wiring
-| Sonos Mainboard Pin #          | DSP Pin          | Raspberry Pi GPIO #        |
-| :---                           |:---              |:---                        |
-| 28 - DAI_SCLK / DAI_MCLK (I2S) | MP11 - Out_BCLK  | GPIO 18 - I2S CLK In       |
-| 32 - DAI_LRCK (I2S)            | MP10 - Out_LRCLK | GPIO 19 - I2S LRCLK        |
-| 34 - DAI_LRCK (I2S)            | MP10 - Out_LRCLK | GPIO 20 - I2S Data In      |
-| 36 - SCL (I2C)                 | (SCL)            | GPIO  3 - I2C SCL          |
-| 38 - SDA (I2C)                 | (SDA)            | GPIO  2 - I2C SCL          |
-| 42 - RST#                      |                  | GPIO 17                    |
-| 44 - MUTE#                     |                  | GPIO 5                     |
-| 28 - Amplifier Power Enable    |                  | GPIO 5 (Yes, connect both) |
-| GND (only one per board!)      | GND              | GND                        |
+| Sonos Mainboard Pin #          | DSP Pin            | Raspberry Pi GPIO #        |
+| :---                           |:---                |:---                        |
+| 28 - DAI_SCLK / DAI_MCLK (I2S) | MP11 - Out_BCLK    | GPIO 18 - I2S CLK In       |
+| 32 - DAI_LRCK (I2S)            | MP10 - Out_LRCLK   | GPIO 19 - I2S LRCLK        |
+| 34 - DAI_SDIN1 (I2S)           | MP6 - TDM_DATA_OUT |                            |
+|                                | MP0 - TDM_DATA_IN  | GPIO 21 - I2S Data Out     |
+| 36 - SCL (I2C)                 | (SCL)              | GPIO  3 - I2C SCL          |
+| 38 - SDA (I2C)                 | (SDA)              | GPIO  2 - I2C SCL          |
+| 42 - RST#                      |                    | GPIO 17                    |
+| 44 - MUTE#                     |                    | GPIO 5                     |
+| 28 - Amplifier Power Enable    |                    | GPIO 5 (Yes, connect both) |
+| GND (only one per board!)      | GND                | GND                        |
 
 ## Button Wiring
 | Pin           | DSP Pin | Raspberry Pi GPIO # |
@@ -153,5 +154,22 @@ gpio=27=op,dl,pu
 dtoverlay=gpio-key,gpio=24,keycode=164,label="KEY_PLAYPAUSE",gpio_pull=up
 
 # Load ADAU1701 I2S driver
+# Compile with sudo dtoverlay -I dts -O dtb sonos-adau1701_i2s.dts -o /boot/overlays/sonos-adau1701_i2s.dtbo
 dtoverlay=sonos-adau1701_i2s
 ```
+# HowTo
+- Wire everything. Maybe leave out the buttons in the beginning and everythin else that complicates things
+- Load Sonos-DSP.dspproj into SigmaStudio
+- Link Compile Download to ADAU1701
+- Ensure you have a volume slider in the SigmaStudio project and set it to a low volume.
+Alternatively make sure Interface Register Reg0 is set to 0x00000005.
+This will make sure PushVol1 will set the start volume rather low.
+You will regret if you start any sound on 0dB volume.
+- Enable one of the sine generators to create a test tone
+- run `sudo ./Sonos-Control.sh initialize`
+- run `./Sonos-Control.sh switchMute`
+- Hope that you can hear the test tone
+  - If not there is probably something wrong with your wiring. Remember to use shielded wires for all I2S wires and keep them as short as possible.
+  - Debug with `pigs i2cri 0 0x2a 1` and look at the ADAU1701's datasheet. This register tells you if CS44600 was able to achieve a lock to the I2S bitclocks provided by ADAU1701.
+    If the SRC_UNLOCK bit is set, something is not right. If SRC_LOCK is set, but you can't hear anything, the wirings of DAI_MCLK & DAI_LRCLK are correct and the problem is either at DAI_SDIN1 or your SigmaStudio project not outputting anything.
+    You can use an analog speaker to test, too.
