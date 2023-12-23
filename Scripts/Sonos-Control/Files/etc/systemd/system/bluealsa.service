@@ -1,0 +1,22 @@
+[Unit]
+Description=BluezALSA proxy
+Requires=bluetooth.service
+After=bluetooth.service
+
+[Service]
+Type=dbus
+BusName=org.bluealsa
+User=bluealsa
+Group=bluealsa
+NoNewPrivileges=true
+ExecStart=/usr/bin/bluealsa -i hci0 -p a2dp-sink
+Restart=on-failure
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+RemoveIPC=true
+RestrictAddressFamilies=AF_UNIX AF_BLUETOOTH
+
+[Install]
+WantedBy=multi-user.target
