@@ -5,18 +5,18 @@ Make Sonos Play:5 Gen. 1 recycle-mode speakers sing again
 This project stems from four Sonos Play:5 that I acquired unbeknownst of the so called Recycle Mode which basically bricked the devices intenionally by Sonos after offering a 30% discount on the newer Gen 2 speakers to the original owner.
 Of course the original owner did not tell me that he underwent this process and so I used the speakers as basic line-in devices for about six months.
 From one day to another they all four stopped working.
-Upon installing the app and trying to see what was wrong, I got the message that they were in Recycle Mode and could not be set-up again.
+Upon installing the Sonos app and trying to see what was wrong, I got the message that they were in Recycle Mode and could not be set-up again.
 I was like "what?!" and consulted the internet for help.
-Quickly it turned out that a lot of customers were angry about the same thing and that Sonos actually stopped bricking the devices after some pressure from the community and also because they were deliberately making rubbish of perfectly good hardware.
+Quickly it turned out that a lot of customers were angry about the same thing and that Sonos actually stopped bricking the devices after some pressure from the community and also because they were deliberately making rubbish out of perfectly good hardware.
 However, the official statement was (and still is in 10.2023), that bricked devices remain bricked.
 I contacted Sonos about this twice and tried to acquire a reset firmware so I could use line-in again.
 They were as helpful as you'd expect for a company that does not offer repairs or schematics and thinks of a recycle mode for working hardware...
 
 Having spent some money on the devices I was obviously not pleased and tried to find a way around this.
-This repo is the result of my work and I hope it helps anyone with old Play:5 or even other devices to make them sing again :)
+This repo is the result of my work and I hope it helps anyone with old Play:5s or even other devices to make them sing again :)
 
 >[!WARNING]
->Disclaimer: All information in this repo is delivered as a courtesy. Please think about what you do as do not take any responsibility for destroying your devices or your health.
+>Disclaimer: All information in this repo is delivered as a courtesy. Please think about what you do as I do not take any responsibility for destroying your devices or your health.
 >Remember: Electricity is dangerous and there is a risk of suffering an electric shock when opening these devices.
 
 > [!NOTE]
@@ -28,11 +28,15 @@ This repo is the result of my work and I hope it helps anyone with old Play:5 or
 - Sonos Play:5 Speaker (obviously)
 - Analog Devices ADAU1701-based Audio DSP board
   - e.g. Wondom APM2 (I used this for my initial tests - worked really well)
-  - e.g. Cheap ADAU1701-based development board from AliExpress
+  - e.g. Cheap ADAU1401/1701-based development board from AliExpress
   - (USB programmer for the DSP board. e.g. Wondom ICP1) [This can be replaced by a TCPIP programmer like this one [blus-audio/sigmadsp](https://github.com/blus-audio/sigmadsp)]
-- Raspberry Pi or similar SBC / Microcontroller
-- Shielded wires for I2S digital sound data (e.g. RG178 coax cable)
+- Raspberry Pi or similar SBC / Microcontroller. I recommend a Zero W or Zero 2 W
+- Shielded wires for I2S digital sound data (e.g. RG178 coax cable). You might get away without them or a ferrite, too.
+- Alternatively: Use the provided PCB layout to make a PCB yourself. I did this at pcbway.com and was very happy with their quality
 - Breadboard cables
+- MP1584EN DC-DC Step-Down Converter to Power the RPi and ADAU1401/1701 DSP
+- 20k resistor
+- BC327-40 Transistor
 - Soldering Iron
 - Analog Devices SigmaStudio (to program the DSP)
   
@@ -67,7 +71,7 @@ This repo is the result of my work and I hope it helps anyone with old Play:5 or
 
 ## Sonos Play:5 Button Connector
 - Pin 1 is identified on the logic board by a white dot
-- There is no need for LED resisors. These are on the button board
+- There is no need for LED resisors. These are on the button board if you use 3.3V
 > [!WARNING]
 > Do not drive the LEDs directly off GPIO pins. These are not strong enough!
 
@@ -86,18 +90,18 @@ This repo is the result of my work and I hope it helps anyone with old Play:5 or
 
 # Wiring
 > [!NOTE]
-> Use only one GND connection from board to board to avoid ground loops
-
-> [!NOTE]
-> Use shielded wires for all I2S lines.
+> Use shielded wires for all I2S lines or at least keep them as short as possible.
+> Maybe you can use unshielded wires with a ferrite. I have not tried this.
 > The CS44600 is very picky about correct clocks and has an automatic sampling rate selector built-in.
-> If you use normal breadboard connector you will NOT get it working as we are working with a very high frequency of 12.288 Mhz which is 12.228 Million pulses per second.
+> If you use normal breadboard connectors you will most likely NOT get it working as we are working with a very high frequency of 12.288 Mhz which is 12.228 Million pulses per second.
 > In my original test design I used two breadboard cables. One was stripped of its insulating and then wrapped in aluminium foil with the second data wire inside.
+> This outher shield was then connected to GND.
 > Don't forget to insulate it again with some sticky tape or heat shrink tubes.
 > This worked well, but the cables were very stiff.
 > I switched to RG178 coax wire which I bought off AliExpress for like 8€/10m.
 >
-> Make sure to only connect one side of this to GND to avoid ground loops.
+> After my initial tests I designed a simple drop-in PCB that removes the need of these complex wire designs.
+> You can find the PCB design on this page, too.
 
 ## Main Wiring
 | Sonos Mainboard Pin #          | DSP Pin            | Raspberry Pi GPIO #        |
@@ -111,12 +115,13 @@ This repo is the result of my work and I hope it helps anyone with old Play:5 or
 | 42 - RST#                      |                    | GPIO 17                    |
 | 44 - MUTE#                     |                    | GPIO 5                     |
 | 28 - Amplifier Power Enable    |                    | GPIO 5 (Yes, connect both) |
-| GND (only one per board!)      | GND                | GND                        |
+|                                | WP                 | GPIO 26                    |
+| GND                            | GND                | GND                        |
 
 ## Button Wiring
 | Pin           | DSP Pin | Raspberry Pi GPIO # |
 | :---          | :---    | :---                |
-| 2 - Mute      |         | GPIO 24             |
+| 2 - Mute      |         | GPIO 6              |
 | 5 OR 7 - GND  | GND     |                     |
 | 9 - Volume +  | MP1     |                     |
 | 10 - Volume - | MP7     |                     |
@@ -127,10 +132,19 @@ This repo is the result of my work and I hope it helps anyone with old Play:5 or
 Sonos-Control.sh must be called to set the CS44600's registers to allow audio to pass through the signal path and to do various other things.
 Check the file as it contains comments.
 
+install:
+The most important command as it will set up everything for you on a freshly installed Raspberry Pi.
+It also sets up basic Bluetooth functionality.
+Be aware of the fact that Bluetooth is not perfect on RPi Zero 1's.
+It works for me, but it might not work for you.
+
 initialize:
 As the name suggests, this argument initializes the CS44600 after a reboot.
 A series of register writes ensures proper operation of the chip.
 Consult the datasheet for detailed explanation or custom settings.
+
+getStatus:
+Read all important registers of CS44600 to see if the initialization has worked.
 
 switchMute:
 Switches the mute state of the hardware and sends a signal to a possible squeezelite server to pause/resume playback.
@@ -138,38 +152,27 @@ As pin 44 and 28 of the Sonos mainboard are to be connected, it also switches on
 If pin 28 is not set to high, the volume will be very low and the speakers are basically driven from a 5V instead of a 24V source. 
 ```
 
-## /boot/config.txt
-```
-# Enable the I2C bus on GPIO 2/3
-dtparam=i2c_arm=on
-
-# GPIO defaults and triggers for Sonos
-gpio=17=op,dl,pu
-gpio=5=op,dl,pu
-
-# ADAU 1701 RESET Pin
-gpio=27=op,dl,pu
-
-# Automated Keystrokes for Triggerhappy
-dtoverlay=gpio-key,gpio=24,keycode=164,label="KEY_PLAYPAUSE",gpio_pull=up
-
-# Load ADAU1701 I2S driver
-# Compile with sudo dtoverlay -I dts -O dtb sonos-adau1701_i2s.dts -o /boot/overlays/sonos-adau1701_i2s.dtbo
-dtoverlay=sonos-adau1701_i2s
-```
 # HowTo
-- Wire everything. Maybe leave out the buttons in the beginning and everythin else that complicates things
-- Load Sonos-DSP.dspproj into SigmaStudio
-- Link Compile Download to ADAU1701
-- Ensure you have a volume slider in the SigmaStudio project and set it to a low volume.
-Alternatively make sure Interface Register Reg0 is set to 0x00000005.
-This will make sure PushVol1 will set the start volume rather low.
-You will regret if you start any sound on 0dB volume.
-- Enable one of the sine generators to create a test tone
-- run `sudo ./Sonos-Control.sh initialize`
-- run `./Sonos-Control.sh switchMute`
-- Hope that you can hear the test tone
-  - If not there is probably something wrong with your wiring. Remember to use shielded wires for all I2S wires and keep them as short as possible.
+- Wire everything. Maybe leave out the buttons in the beginning and everything else that complicates things
+- Alternatively use my PCB layout
+- Copy the folder Sonos-Control onto the RPi
+- chmod +x Sonos-Control.sh
+- Run Sonos-Control.sh install
+- If this is the first time you do this, say yes when asked to flash the firmware. This will flash the ADAU1401/1701's firmware so we have a usable base.
+- Cut the power and reboot everything
+- Run 'speaker-test -t wav -c 2' and hope that you hear a sound
+- If not there is probably something wrong with your wiring. Remember to use shielded wires for all I2S wires and keep them as short as possible.
   - Debug with `pigs i2cri 0 0x2a 1` and look at the ADAU1701's datasheet. This register tells you if CS44600 was able to achieve a lock to the I2S bitclocks provided by ADAU1701.
     If the SRC_UNLOCK bit is set, something is not right. If SRC_LOCK is set, but you can't hear anything, the wirings of DAI_MCLK & DAI_LRCLK are correct and the problem is either at DAI_SDIN1 or your SigmaStudio project not outputting anything.
-    You can use an analog speaker to test, too.
+  - You can also use piscope to see if the I2S signals are generated correctly. For this stop the pigpiod service 'sudo systemctl stop pigpiod' and run it with slightly different settings: 'sudo pigpiod -s 2 -t 0'
+  Connect via SSH with X11 forwarding and run 'piscope &'
+
+To make changes to the DSP (like change the crossover frequency or enable bass boost)
+- Load Sonos-DSP.dspproj into SigmaStudio
+- On 'Hardware Configuration\Config' right click on TCPIP1701, select 'Show TCPI/IP settings' and set the IP address.
+- Click on 'Link Compile Download'. This will transfer the compiled program to the RPi and sigmadsp will write it to the RAM of the DSP (this is NOT permanent).
+- You can now make changes to everything pretty much live.
+- When everything is as you want it, go back to 'Hardware Configuration\Config' and connect the ADAU1701 IC 1 to the 'USB Interface'. Then right click the IC 1 and select 'Write latest compilation to EEPROM'.
+- This will create the firmware files in a subfolder called 'Sonos-DSP_IC 2'
+- Now run the PowerShell script Convert-SigmaStudioBinToEcometHex.ps1 on the corresponding bin file. This will convert it to the necessary format to flash it to the DPS's EEPROM.
+- Copy the file to RPi and place it in the folder 'Sonos-Control'. The name must be 'E2Prom.pshex'. Then run 'Sonos-Control.sh writeE2PROM' which will flash it.
