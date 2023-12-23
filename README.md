@@ -32,7 +32,11 @@ This repo is the result of my work and I hope it helps anyone with old Play:5s o
   - (USB programmer for the DSP board. e.g. Wondom ICP1) [This can be replaced by a TCPIP programmer like this one [blus-audio/sigmadsp](https://github.com/blus-audio/sigmadsp)]
 - Raspberry Pi or similar SBC / Microcontroller. I recommend a Zero W or Zero 2 W
 - Shielded wires for I2S digital sound data (e.g. RG178 coax cable). You might get away without them or a ferrite, too.
-- Alternatively: Use the provided PCB layout to make a PCB yourself. I did this at pcbway.com and was very happy with their quality
+- Alternatively: Use the provided PCB layout to make a PCB yourself. I did this at pcbway.com and was very happy with their quality.
+  - 2x20 2.54mm Female Pin Header
+  - 2x25 2.00mm Female Pin Header
+  - Single Row 2.54mm Female and Male Pin Headers
+  - Micro JST 10Pin 1.25mm Connector (You can also desolver the one on the Sonos logic board)
 - Breadboard cables
 - MP1584EN DC-DC Step-Down Converter to Power the RPi and ADAU1401/1701 DSP
 - 20k resistor
