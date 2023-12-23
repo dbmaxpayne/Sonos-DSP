@@ -176,3 +176,10 @@ To make changes to the DSP (like change the crossover frequency or enable bass b
 - This will create the firmware files in a subfolder called 'Sonos-DSP_IC 2'
 - Now run the PowerShell script Convert-SigmaStudioBinToEcometHex.ps1 on the corresponding bin file. This will convert it to the necessary format to flash it to the DPS's EEPROM.
 - Copy the file to RPi and place it in the folder 'Sonos-Control'. The name must be 'E2Prom.pshex'. Then run 'Sonos-Control.sh writeE2PROM' which will flash it.
+
+# Special Thanks
+This project would not have been successfull without the following:
+- https://sites.google.com/site/sonosdebug
+- https://github.com/mamin27/ecomet_i2c_raspberry_tools
+- https://github.com/blus-audio/sigmadsp
+- https://github.com/JasonLG1979/PiZero-Bluetooth-Audio-Receiver
